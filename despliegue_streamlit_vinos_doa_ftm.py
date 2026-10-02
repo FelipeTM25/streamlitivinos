@@ -146,7 +146,7 @@ st.warning("El modelo tiene un error del 8% (mape: error porcentual)")
 data_preparada=data.copy()
 
 #En despliegue drop_first= False
-data_preparada = pd.get_dummies(data_preparada, columns=['tipo'], drop_first=true, dtype=int)
+data_preparada = pd.get_dummies(data_preparada, columns=['tipo'], drop_first=False, dtype=int)
 data_preparada.head()
 
 #Se adicionan las columnas faltantes
