@@ -34,14 +34,14 @@ modelo, labelencoder, variables, min_max_scaler = pickle.load(open(filename, 'rb
 
 import streamlit as st
 
-st.set_page_config(page_title="Predicción de Calidad de Vinos", page_icon="🍷", layout="centered")
+st.set_page_config(page_title="Predicción de Calidad de Vinos", page_icon="🍷", layout="wide")
 
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
     :root {
-        --vino: #7a1f3d; --vino-osc: #5e1830;
+        --vino: #7a1f3d; --vino-osc: #5e1830; --vino-claro: #f6e8ec;
         --texto: #1f1a1c; --suave: #6b6266; --borde: #e7e1dd;
         --fondo: #faf8f6; --tarjeta: #ffffff;
         --bueno: #2f6b4f; --malo: #a12d3a;
@@ -53,124 +53,215 @@ st.markdown("""
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
     [data-testid="stHeader"] { background: transparent; }
-    .block-container { max-width: 900px; padding-top: 2.5rem; padding-bottom: 4rem; }
+    [data-testid="stMain"], [data-testid="stAppViewContainer"] { scroll-behavior: smooth; }
+    .block-container, [data-testid="stMainBlockContainer"] { max-width: 1240px; padding: 1.25rem 2rem 2rem; }
+
+    /* Barra superior */
+    .nav { display: flex; align-items: center; justify-content: space-between; padding: .5rem 0 1.25rem; }
+    .nav .marca { font-weight: 800; font-size: 1.1rem; color: var(--texto); letter-spacing: -.01em; }
+    .nav .marca span { color: var(--vino); }
+    .nav .links a { color: var(--suave); text-decoration: none; font-size: .9rem; font-weight: 500; margin-left: 1.5rem; }
+    .nav .links a:hover { color: var(--vino); }
 
     /* Portada */
-    .portada {
-        background: linear-gradient(135deg, #5e1830 0%, #7a1f3d 60%, #8f2a4a 100%);
-        border-radius: 16px; padding: 2rem 2rem 1.6rem; color: #fff; margin-bottom: 1.75rem;
-        box-shadow: 0 12px 30px rgba(94,24,48,.18);
+    .hero {
+        display: grid; grid-template-columns: 1.25fr 1fr; align-items: center; gap: 2rem;
+        background: radial-gradient(circle at 85% 30%, #9b3157 0%, transparent 55%),
+                    linear-gradient(135deg, #4a1226 0%, #6e1c38 55%, #7a1f3d 100%);
+        border-radius: 24px; padding: 3.5rem 3.5rem; color: #fff;
+        box-shadow: 0 20px 50px rgba(74,18,38,.22);
     }
-    .portada .eyebrow { font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #f1c9d4; }
-    .portada .titulo { font-size: 2.1rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; margin: .4rem 0 .5rem; }
-    .portada .subtitulo { font-size: 1rem; color: #f6e3e8; line-height: 1.55; max-width: 560px; }
-    .pasos { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.25rem; }
-    .pasos span {
-        background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18);
-        border-radius: 99px; padding: .35rem .8rem; font-size: .82rem; color: #fff;
+    .hero .eyebrow {
+        display: inline-block; font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+        color: #f6dbe3; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
+        border-radius: 99px; padding: .35rem .8rem;
     }
+    .hero h1 {
+        font-size: 3.1rem; font-weight: 800; line-height: 1.08; letter-spacing: -.03em;
+        color: #fff; margin: 1rem 0 .9rem; padding: 0;
+    }
+    .hero h1 em { font-style: normal; color: #f3b9c9; }
+    .hero .sub { font-size: 1.1rem; line-height: 1.6; color: #f3dfe5; max-width: 540px; }
+    .hero .cta {
+        display: inline-block; margin-top: 1.75rem; background: #fff; color: var(--vino) !important;
+        font-weight: 700; text-decoration: none; padding: .85rem 1.5rem; border-radius: 10px;
+        box-shadow: 0 8px 20px rgba(0,0,0,.18); transition: transform .15s ease;
+    }
+    .hero .cta:hover { transform: translateY(-2px); }
+    .hero .stats { display: flex; gap: 2.5rem; margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,.15); }
+    .hero .stats b { display: block; font-size: 1.6rem; font-weight: 800; color: #fff; }
+    .hero .stats span { font-size: .82rem; color: #e9c6d0; }
+    .hero .visual { position: relative; display: flex; justify-content: center; }
+    .hero .visual svg { width: 100%; max-width: 300px; height: auto; }
+    .hero .chip {
+        position: absolute; background: #fff; color: var(--texto); border-radius: 12px; padding: .6rem .85rem;
+        box-shadow: 0 10px 25px rgba(0,0,0,.2); font-size: .8rem; line-height: 1.3;
+    }
+    .hero .chip b { display: block; font-size: .95rem; color: var(--bueno); }
+    .hero .chip.uno { top: 12%; right: 2%; }
+    .hero .chip.dos { bottom: 14%; left: 4%; }
+    .hero .chip.dos b { color: var(--vino); }
 
-    /* Títulos de sección y de grupo */
-    .seccion { display: flex; align-items: center; gap: .6rem; font-size: 1.05rem; font-weight: 600; color: var(--texto); margin: 1.75rem 0 .2rem; }
-    .seccion .n {
-        display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem;
-        border-radius: 50%; background: var(--vino); color: #fff; font-size: .8rem; font-weight: 700;
-    }
-    .ayuda { font-size: .88rem; color: var(--suave); margin: 0 0 .75rem 2.2rem; }
-    .grupo { font-size: .95rem; font-weight: 600; color: var(--texto); margin: .5rem 0 .25rem; }
+    /* Encabezados de sección */
+    .titulo-seccion { text-align: center; margin: 4rem 0 2rem; }
+    .titulo-seccion .eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--vino); }
+    .titulo-seccion h2 { font-size: 2.1rem; font-weight: 800; letter-spacing: -.02em; color: var(--texto); margin: .4rem 0 .5rem; padding: 0; }
+    .titulo-seccion p { color: var(--suave); font-size: 1.02rem; max-width: 620px; margin: 0 auto; }
 
-    /* Contenedores con borde como tarjetas blancas */
-    [data-testid="stVerticalBlockBorderWrapper"] {
-        background: var(--tarjeta); border-color: var(--borde) !important;
-        border-radius: 12px; box-shadow: 0 1px 2px rgba(31,26,28,.04);
+    /* Tarjetas del formulario y del panel */
+    .st-key-formulario, .st-key-panel {
+        background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 18px;
+        padding: 1.75rem; box-shadow: 0 1px 3px rgba(31,26,28,.05);
     }
+    [data-testid="stColumn"]:has(.st-key-panel) { align-self: stretch; }
+    .st-key-panel { position: sticky; top: 1.5rem; }
+    .grupo { font-size: .95rem; font-weight: 700; color: var(--texto); margin: .75rem 0 .25rem; }
+    .panel-titulo { font-size: 1.15rem; font-weight: 700; color: var(--texto); }
+    .panel-sub { font-size: .88rem; color: var(--suave); margin-bottom: .9rem; }
 
     /* Resumen de la muestra */
     .resumen {
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
-        background: var(--borde); border: 1px solid var(--borde); border-radius: 10px; overflow: hidden;
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+        background: var(--borde); border: 1px solid var(--borde); border-radius: 12px; overflow: hidden;
     }
-    .resumen .item { background: var(--tarjeta); padding: .7rem .9rem; }
-    .resumen .lbl { display: block; font-size: .72rem; color: var(--suave); text-transform: uppercase; letter-spacing: .04em; }
-    .resumen .val { display: block; font-size: 1.05rem; font-weight: 600; color: var(--texto); margin-top: .15rem; font-variant-numeric: tabular-nums; }
-    .resumen .und { font-size: .78rem; font-weight: 500; color: var(--suave); margin-left: .2rem; }
-    @media (max-width: 640px) { .resumen { grid-template-columns: repeat(2, 1fr); } }
-
-    /* Desempeño del modelo */
-    .metricas {
-        display: flex; flex-wrap: wrap; gap: 1rem 2.5rem;
-        background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.1rem;
-    }
-    .metricas .num { display: block; font-size: 1.35rem; font-weight: 700; color: var(--texto); font-variant-numeric: tabular-nums; }
-    .metricas .lbl { display: block; font-size: .78rem; color: var(--suave); }
-    .metricas .nota { flex-basis: 100%; font-size: .8rem; color: var(--suave); border-top: 1px solid var(--borde); padding-top: .6rem; }
+    .resumen .item { background: var(--tarjeta); padding: .6rem .75rem; }
+    .resumen .lbl { display: block; font-size: .68rem; color: var(--suave); text-transform: uppercase; letter-spacing: .04em; }
+    .resumen .val { display: block; font-size: 1rem; font-weight: 600; color: var(--texto); margin-top: .1rem; font-variant-numeric: tabular-nums; }
+    .resumen .und { font-size: .72rem; font-weight: 500; color: var(--suave); margin-left: .2rem; }
 
     /* Botón */
-    div.stButton { margin-top: .5rem; }
+    div.stButton { margin-top: 1rem; }
     div.stButton > button {
         width: 100%; background: var(--vino); color: #fff; border: 1px solid var(--vino);
-        border-radius: 8px; padding: .7rem 1rem; transition: background .15s ease;
+        border-radius: 10px; padding: .8rem 1rem; transition: background .15s ease;
     }
     div.stButton > button:hover, div.stButton > button:focus:not(:active) {
         background: var(--vino-osc); border-color: var(--vino-osc); color: #fff;
     }
-    div.stButton > button p { color: #fff !important; font-weight: 600; font-size: 1rem; }
+    div.stButton > button p { color: #fff !important; font-weight: 700; font-size: 1rem; }
 
     /* Resultado */
+    .espera {
+        border: 1.5px dashed var(--borde); border-radius: 12px; padding: 1.25rem; margin-top: 1rem;
+        text-align: center; color: var(--suave); font-size: .9rem;
+    }
     .resultado {
         background: var(--tarjeta); border: 1px solid var(--borde); border-left: 4px solid var(--c);
-        border-radius: 10px; padding: 1.1rem 1.25rem; margin-top: 1rem;
+        border-radius: 12px; padding: 1.1rem 1.25rem; margin-top: 1rem;
     }
-    .resultado.buena { --c: var(--bueno); }
-    .resultado.mala { --c: var(--malo); }
-    .resultado .lbl { font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--suave); }
-    .resultado .valor { font-size: 1.5rem; font-weight: 700; color: var(--c); margin: .2rem 0 .85rem; }
-    .resultado .barra { height: 6px; background: #efe9e5; border-radius: 99px; overflow: hidden; }
+    .resultado.buena { --c: var(--bueno); background: #f3f8f4; }
+    .resultado.mala { --c: var(--malo); background: #fbf2f3; }
+    .resultado .lbl { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--suave); }
+    .resultado .valor { font-size: 1.4rem; font-weight: 800; color: var(--c); margin: .2rem 0 .8rem; }
+    .resultado .barra { height: 7px; background: rgba(0,0,0,.07); border-radius: 99px; overflow: hidden; }
     .resultado .barra span { display: block; height: 100%; background: var(--c); }
     .resultado .meta { display: flex; justify-content: space-between; font-size: .82rem; color: var(--suave); margin-top: .45rem; }
-    .resultado .mensaje { font-size: .95rem; color: var(--texto); line-height: 1.5; margin-top: .9rem; }
+    .resultado .mensaje { font-size: .92rem; color: var(--texto); line-height: 1.5; margin-top: .8rem; }
+
+    /* Cómo funciona */
+    .pasos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+    .paso { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 18px; padding: 1.75rem; }
+    .paso .n {
+        display: inline-flex; align-items: center; justify-content: center; width: 2.4rem; height: 2.4rem;
+        border-radius: 12px; background: var(--vino-claro); color: var(--vino); font-weight: 800;
+    }
+    .paso h3 { font-size: 1.1rem; font-weight: 700; color: var(--texto); margin: 1rem 0 .4rem; padding: 0; }
+    .paso p { font-size: .93rem; color: var(--suave); line-height: 1.55; margin: 0; }
+
+    /* Banda de métricas */
+    .banda {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1.25rem;
+        background: var(--vino-claro); border-radius: 18px; padding: 1.75rem 2rem; text-align: center;
+    }
+    .banda b { display: block; font-size: 2rem; font-weight: 800; color: var(--vino); letter-spacing: -.02em; }
+    .banda span { font-size: .85rem; color: var(--suave); }
+    .aviso { text-align: center; font-size: .85rem; color: var(--suave); margin-top: 1rem; }
+
+    /* Pie */
+    .pie { border-top: 1px solid var(--borde); margin-top: 3.5rem; padding-top: 1.25rem; text-align: center; font-size: .82rem; color: var(--suave); }
+
+    /* Pantallas pequeñas */
+    @media (max-width: 900px) {
+        .hero { grid-template-columns: 1fr; padding: 2.25rem 1.5rem; }
+        .hero h1 { font-size: 2.2rem; }
+        .hero .visual { display: none; }
+        .pasos, .banda { grid-template-columns: 1fr 1fr; }
+        .nav .links { display: none; }
+        .st-key-panel { position: static; }
+    }
     </style>
 """, unsafe_allow_html=True)
 
-#Portada
+#Barra superior y portada
 st.markdown("""
-    <div class="portada">
-        <div class="eyebrow">🍷 Predicción con inteligencia artificial</div>
-        <div class="titulo">Descubre la calidad de tu vino</div>
-        <div class="subtitulo">Ingresa los datos del análisis de laboratorio de tu vino y nuestro modelo te dirá
-        en segundos si es de calidad buena o mala.</div>
-        <div class="pasos"><span>1 · Describe tu vino</span><span>2 · Revisa los datos</span><span>3 · Obtén tu predicción</span></div>
-    </div>
+<div class="nav">
+<div class="marca">🍷 Vino<span>Score</span></div>
+<div class="links"><a href="#prediccion">Predicción</a><a href="#como-funciona">Cómo funciona</a><a href="#modelo">El modelo</a></div>
+</div>
+<div class="hero">
+<div>
+<div class="eyebrow">Predicción con inteligencia artificial</div>
+<h1>Descubre en segundos la <em>calidad</em> de tu vino</h1>
+<div class="sub">Ingresa los datos del análisis de laboratorio de tu vino blanco o tinto y nuestra red neuronal estimará si es de calidad buena o mala.</div>
+<a class="cta" href="#prediccion">Hacer mi predicción →</a>
+<div class="stats">
+<div><b>76%</b><span>de exactitud</span></div>
+<div><b>11</b><span>variables analizadas</span></div>
+<div><b>2</b><span>tipos de vino</span></div>
+</div>
+</div>
+<div class="visual">
+<svg viewBox="0 0 200 250" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<circle cx="100" cy="115" r="95" fill="rgba(255,255,255,0.07)"/>
+<path d="M55 35 H145 C145 100 130 140 100 145 C70 140 55 100 55 35 Z" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.65)" stroke-width="2.5"/>
+<path d="M58 78 H142 C139 115 125 138 100 142 C75 138 61 115 58 78 Z" fill="#c2416a"/>
+<ellipse cx="100" cy="78" rx="42" ry="5" fill="#d9577f"/>
+<path d="M70 48 C68 78 72 105 83 125" stroke="rgba(255,255,255,0.35)" stroke-width="4" fill="none" stroke-linecap="round"/>
+<rect x="97" y="145" width="6" height="70" rx="3" fill="rgba(255,255,255,0.65)"/>
+<ellipse cx="100" cy="218" rx="38" ry="6" fill="rgba(255,255,255,0.65)"/>
+</svg>
+<div class="chip uno">Ejemplo de resultado<b>Calidad buena · 82%</b></div>
+<div class="chip dos">Alcohol<b>11.8 % vol</b></div>
+</div>
+</div>
 """, unsafe_allow_html=True)
 
+#Sección de predicción
+st.markdown("""
+<div id="prediccion" class="titulo-seccion">
+<div class="eyebrow">Paso a paso</div>
+<h2>Haz tu predicción</h2>
+<p>Los valores iniciales corresponden a un vino típico. Ajusta los que conozcas y mira el resultado a la derecha.</p>
+</div>
+""", unsafe_allow_html=True)
+
+col_form, col_panel = st.columns([1.65, 1], gap='large')
+
 #Captura de datos (rangos min-max de los datos de entrenamiento, valor inicial = mediana)
-st.markdown('<div class="seccion"><span class="n">1</span>Describe tu vino</div>'
-            '<div class="ayuda">Los valores iniciales son los de un vino típico. Ajusta los que conozcas; '
-            'pasa el cursor por el ícono ⓘ para ver el nombre técnico.</div>', unsafe_allow_html=True)
+with col_form:
+    with st.container(key='formulario'):
 
-with st.container(border=True):
+        #Tipo de vino
+        tipo = st.radio('Tipo de vino', ['blanco', 'tinto'], format_func=str.capitalize, horizontal=True)
 
-    #Tipo de vino
-    tipo = st.radio('Tipo de vino', ['blanco', 'tinto'], format_func=str.capitalize, horizontal=True)
+        col1, col2 = st.columns(2, gap='large')
 
-    col1, col2 = st.columns(2, gap='large')
+        with col1:
+            st.markdown('<div class="grupo">Acidez y composición</div>', unsafe_allow_html=True)
+            fixed_acidity = st.slider('Acidez fija (g/L)', min_value=3.8, max_value=15.9, value=6.9, step=0.1, help='fixed acidity')
+            volatile_acidity = st.slider('Acidez volátil (g/L)', min_value=0.08, max_value=1.58, value=0.29, step=0.01, help='volatile acidity')
+            citric_acid = st.slider('Ácido cítrico (g/L)', min_value=0.0, max_value=1.66, value=0.31, step=0.01, help='citric acid')
+            residual_sugar = st.slider('Azúcar residual (g/L)', min_value=0.6, max_value=65.8, value=2.9, step=0.1, help='residual sugar')
+            chlorides = st.slider('Cloruros (g/L)', min_value=0.009, max_value=0.611, value=0.046, step=0.001, format="%.3f", help='chlorides')
+            pH = st.slider('pH', min_value=2.72, max_value=4.01, value=3.21, step=0.01, help='pH')
 
-    with col1:
-        st.markdown('<div class="grupo">Acidez y composición</div>', unsafe_allow_html=True)
-        fixed_acidity = st.slider('Acidez fija (g/L)', min_value=3.8, max_value=15.9, value=6.9, step=0.1, help='fixed acidity')
-        volatile_acidity = st.slider('Acidez volátil (g/L)', min_value=0.08, max_value=1.58, value=0.29, step=0.01, help='volatile acidity')
-        citric_acid = st.slider('Ácido cítrico (g/L)', min_value=0.0, max_value=1.66, value=0.31, step=0.01, help='citric acid')
-        residual_sugar = st.slider('Azúcar residual (g/L)', min_value=0.6, max_value=65.8, value=2.9, step=0.1, help='residual sugar')
-        chlorides = st.slider('Cloruros (g/L)', min_value=0.009, max_value=0.611, value=0.046, step=0.001, format="%.3f", help='chlorides')
-        pH = st.slider('pH', min_value=2.72, max_value=4.01, value=3.21, step=0.01, help='pH')
-
-    with col2:
-        st.markdown('<div class="grupo">Sulfitos, densidad y alcohol</div>', unsafe_allow_html=True)
-        free_sulfur_dioxide = st.slider('SO₂ libre (mg/L)', min_value=1.0, max_value=289.0, value=29.0, step=1.0, help='free sulfur dioxide')
-        total_sulfur_dioxide = st.slider('SO₂ total (mg/L)', min_value=6.0, max_value=440.0, value=120.0, step=1.0, help='total sulfur dioxide')
-        density = st.slider('Densidad (g/cm³)', min_value=0.9871, max_value=1.0390, value=0.9944, step=0.0001, format="%.4f", help='density')
-        sulphates = st.slider('Sulfatos (g/L)', min_value=0.22, max_value=2.0, value=0.5, step=0.01, help='sulphates')
-        alcohol = st.slider('Alcohol (% vol)', min_value=8.0, max_value=14.9, value=10.4, step=0.1, help='alcohol')
+        with col2:
+            st.markdown('<div class="grupo">Sulfitos, densidad y alcohol</div>', unsafe_allow_html=True)
+            free_sulfur_dioxide = st.slider('SO₂ libre (mg/L)', min_value=1.0, max_value=289.0, value=29.0, step=1.0, help='free sulfur dioxide')
+            total_sulfur_dioxide = st.slider('SO₂ total (mg/L)', min_value=6.0, max_value=440.0, value=120.0, step=1.0, help='total sulfur dioxide')
+            density = st.slider('Densidad (g/cm³)', min_value=0.9871, max_value=1.0390, value=0.9944, step=0.0001, format="%.4f", help='density')
+            sulphates = st.slider('Sulfatos (g/L)', min_value=0.22, max_value=2.0, value=0.5, step=0.01, help='sulphates')
+            alcohol = st.slider('Alcohol (% vol)', min_value=8.0, max_value=14.9, value=10.4, step=0.1, help='alcohol')
 
 
 #Dataframe
@@ -182,6 +273,20 @@ predictoras_numericas = ['fixed acidity', 'volatile acidity', 'citric acid',
 datos = [[fixed_acidity, volatile_acidity, citric_acid, residual_sugar, chlorides,
           free_sulfur_dioxide, total_sulfur_dioxide, density, pH, sulphates, alcohol, tipo]]
 data = pd.DataFrame(datos, columns=predictoras_numericas + ['tipo']) #Dataframe con los mismos nombres de variables
+
+#Se realiza la preparación de datos
+data_preparada=data.copy()
+
+#En despliegue drop_first= False
+data_preparada = pd.get_dummies(data_preparada, columns=['tipo'], drop_first=False, dtype=int)
+
+#Se adicionan las columnas faltantes (queda solo tipo_tinto, igual que en el entrenamiento)
+data_preparada=data_preparada.reindex(columns=variables,fill_value=0)
+
+#Se normaliza para predecir con Knn, Red, SVM, Reg
+#En los despliegues no se llama fit
+#Como el modelo final es una Red Neuronal SÍ se normaliza
+data_preparada[predictoras_numericas]= min_max_scaler.transform(data_preparada[predictoras_numericas])
 
 #Resumen de la muestra ingresada (nombre, valor, unidad)
 resumen = [
@@ -202,63 +307,74 @@ items = ''.join(f'<div class="item"><span class="lbl">{nombre}</span>'
                 f'<span class="val">{valor}<span class="und">{unidad}</span></span></div>'
                 for nombre, valor, unidad in resumen)
 
-st.markdown('<div class="seccion"><span class="n">2</span>Revisa los datos de tu vino</div>'
-            '<div class="ayuda">Esto es lo que el modelo va a analizar.</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="resumen">{items}</div>', unsafe_allow_html=True)
+#Panel lateral: resumen, botón y resultado
+with col_panel:
+    with st.container(key='panel'):
+        st.markdown('<div class="panel-titulo">Tu vino</div>'
+                    '<div class="panel-sub">Esto es lo que el modelo va a analizar.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="resumen">{items}</div>', unsafe_allow_html=True)
+
+        #Predicción: se muestra en la interfaz al presionar el botón
+        if st.button('Predecir calidad', type='primary'):
+
+            #Hacemos la predicción con la Red Neuronal
+            Y_pred = modelo.predict(data_preparada)
+
+            #Se convierte 0/1 a la etiqueta original (Buena/Mala)
+            Y_pred_etiqueta = labelencoder.inverse_transform(Y_pred)
+
+            #Probabilidad de la clase predicha
+            probabilidad = modelo.predict_proba(data_preparada)[0].max()
+
+            #Tarjeta de resultado con barra de confianza
+            if Y_pred_etiqueta[0] == 'Buena':
+                clase, titulo = 'buena', '🍇 ¡Tu vino es de calidad buena!'
+                mensaje = 'Sus características se parecen a las de los vinos mejor calificados. ¡Salud!'
+            else:
+                clase, titulo = 'mala', 'Tu vino es de calidad mala'
+                mensaje = ('Sus características se parecen a las de los vinos peor calificados. '
+                           'Prueba ajustando valores como el alcohol o la acidez volátil para ver cómo cambia el resultado.')
+
+            st.markdown(f"""
+<div class="resultado {clase}">
+<div class="lbl">Resultado de la predicción</div>
+<div class="valor">{titulo}</div>
+<div class="barra"><span style="width:{probabilidad:.0%}"></span></div>
+<div class="meta"><span>Confianza del modelo</span><span>{probabilidad:.0%}</span></div>
+<div class="mensaje">{mensaje}</div>
+</div>
+""", unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="espera">Ajusta los valores y presiona <b>Predecir calidad</b>.<br>'
+                        'Tu resultado aparecerá aquí.</div>', unsafe_allow_html=True)
+
+#Cómo funciona
+st.markdown("""
+<div id="como-funciona" class="titulo-seccion">
+<div class="eyebrow">Cómo funciona</div>
+<h2>Tres pasos, un resultado</h2>
+<p>No necesitas saber de machine learning: solo los datos del análisis de tu vino.</p>
+</div>
+<div class="pasos">
+<div class="paso"><span class="n">1</span><h3>Ingresa el análisis</h3><p>Usa los valores de laboratorio de tu vino: acidez, azúcar, sulfitos, densidad, alcohol y más.</p></div>
+<div class="paso"><span class="n">2</span><h3>El modelo lo analiza</h3><p>Una red neuronal entrenada con vinos blancos y tintos compara tu muestra con todo lo que aprendió.</p></div>
+<div class="paso"><span class="n">3</span><h3>Recibe tu resultado</h3><p>Obtienes la calidad estimada y qué tan seguro está el modelo de su predicción.</p></div>
+</div>
+""", unsafe_allow_html=True)
 
 # Recordar medida de desempeño del modelo (validación cruzada, 10 folds)
 st.markdown("""
-    <div class="metricas" style="margin-top:1rem">
-        <div><span class="num">76%</span><span class="lbl">Exactitud del modelo</span></div>
-        <div><span class="num">0.74</span><span class="lbl">F1 macro</span></div>
-        <div><span class="num">10</span><span class="lbl">Folds de validación cruzada</span></div>
-        <div class="nota">El modelo acierta en aproximadamente 3 de cada 4 vinos; tómalo como una orientación, no como un veredicto final.</div>
-    </div>
+<div id="modelo" class="titulo-seccion">
+<div class="eyebrow">El modelo</div>
+<h2>Resultados que puedes revisar</h2>
+<p>El desempeño se midió con validación cruzada de 10 folds sobre los datos de entrenamiento.</p>
+</div>
+<div class="banda">
+<div><b>76%</b><span>Exactitud</span></div>
+<div><b>0.74</b><span>F1 macro</span></div>
+<div><b>10</b><span>Folds de validación</span></div>
+<div><b>MLP</b><span>Red neuronal</span></div>
+</div>
+<div class="aviso">El modelo acierta en aproximadamente 3 de cada 4 vinos: tómalo como una orientación, no como un veredicto final.</div>
+<div class="pie">🍷 VinoScore · Modelo de red neuronal (MLP) desplegado con Streamlit</div>
 """, unsafe_allow_html=True)
-
-st.markdown('<div class="seccion"><span class="n">3</span>Obtén tu predicción</div>', unsafe_allow_html=True)
-
-#Se realiza la preparación de datos
-data_preparada=data.copy()
-
-#En despliegue drop_first= False
-data_preparada = pd.get_dummies(data_preparada, columns=['tipo'], drop_first=False, dtype=int)
-
-#Se adicionan las columnas faltantes (queda solo tipo_tinto, igual que en el entrenamiento)
-data_preparada=data_preparada.reindex(columns=variables,fill_value=0)
-
-#Se normaliza para predecir con Knn, Red, SVM, Reg
-#En los despliegues no se llama fit
-#Como el modelo final es una Red Neuronal SÍ se normaliza
-data_preparada[predictoras_numericas]= min_max_scaler.transform(data_preparada[predictoras_numericas])
-
-#Predicción: se muestra en la interfaz al presionar el botón
-if st.button('Predecir calidad', type='primary'):
-
-    #Hacemos la predicción con la Red Neuronal
-    Y_pred = modelo.predict(data_preparada)
-
-    #Se convierte 0/1 a la etiqueta original (Buena/Mala)
-    Y_pred_etiqueta = labelencoder.inverse_transform(Y_pred)
-
-    #Probabilidad de la clase predicha
-    probabilidad = modelo.predict_proba(data_preparada)[0].max()
-
-    #Tarjeta de resultado con barra de confianza
-    if Y_pred_etiqueta[0] == 'Buena':
-        clase, titulo = 'buena', '🍇 ¡Tu vino es de calidad buena!'
-        mensaje = 'Sus características se parecen a las de los vinos mejor calificados. ¡Salud!'
-    else:
-        clase, titulo = 'mala', 'Tu vino es de calidad mala'
-        mensaje = ('Sus características se parecen a las de los vinos peor calificados. '
-                   'Prueba ajustando valores como el alcohol o la acidez volátil para ver cómo cambia el resultado.')
-
-    st.markdown(f"""
-        <div class="resultado {clase}">
-            <div class="lbl">Resultado de la predicción</div>
-            <div class="valor">{titulo}</div>
-            <div class="barra"><span style="width:{probabilidad:.0%}"></span></div>
-            <div class="meta"><span>Confianza del modelo</span><span>{probabilidad:.0%}</span></div>
-            <div class="mensaje">{mensaje}</div>
-        </div>
-    """, unsafe_allow_html=True)
