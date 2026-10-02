@@ -38,14 +38,65 @@ st.set_page_config(page_title="Predicción de Calidad de Vinos", page_icon="🍷
 
 st.markdown("""
     <style>
-    .stApp { background: linear-gradient(160deg, #2b0a14 0%, #5a1428 50%, #7b1e3a 100%); color:#fbeff2; }
-    h1, h2, h3, .stCaption, p { color:#fbeff2 !important; }
-    label, .stSelectbox label, .stSlider label { color:#f7dce3 !important; font-weight:600 !important; }
-    div.stButton > button {
-        background: linear-gradient(90deg, #c9a227 0%, #f3d77a 100%);
-        color:#2b0a14; font-weight:700; border:none; border-radius:12px; padding:0.6rem 1.4rem; width:100%;
+    /* Fondo: copa de tinto con brillo dorado arriba */
+    .stApp {
+        background:
+            radial-gradient(ellipse at 15% 0%, rgba(227,181,91,0.18) 0%, transparent 45%),
+            radial-gradient(ellipse at 100% 100%, rgba(196,69,105,0.25) 0%, transparent 50%),
+            linear-gradient(165deg, #1a0710 0%, #3d0f22 55%, #5c1631 100%);
+        color:#f8ecef;
     }
-    div.stButton > button:hover { box-shadow:0 8px 20px rgba(243,215,122,0.35); color:#000; }
+    [data-testid="stHeader"] { background: transparent; }
+
+    /* Título con degradado oro -> rosado */
+    h1 {
+        background: linear-gradient(90deg, #f3d48a 0%, #e3b55b 40%, #e8879c 100%);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent; font-weight:800 !important;
+    }
+    h2, h3 { color:#f3d48a !important; font-weight:700 !important; }
+    p, .stCaption, [data-testid="stCaptionContainer"] { color:#e9cdd4 !important; }
+    label, .stSelectbox label, .stSlider label { color:#f8ecef !important; font-weight:600 !important; }
+
+    /* Columnas como tarjetas de vidrio */
+    [data-testid="stColumn"], [data-testid="column"] {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(227,181,91,0.22);
+        border-radius: 16px; padding: 1rem 1.1rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    /* Tabla */
+    [data-testid="stDataFrame"] {
+        border: 1px solid rgba(227,181,91,0.25); border-radius: 12px; overflow: hidden;
+    }
+
+    /* Botón dorado */
+    div.stButton > button {
+        background: linear-gradient(90deg, #c8922f 0%, #e3b55b 50%, #f3d48a 100%);
+        color:#2a0a16; font-weight:800; letter-spacing:0.3px;
+        border:none; border-radius:14px; padding:0.7rem 1.4rem; width:100%;
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+    div.stButton > button:hover {
+        color:#1a0710; transform: translateY(-2px);
+        box-shadow:0 10px 24px rgba(227,181,91,0.40);
+    }
+
+    /* Tarjetas de resultado */
+    .resultado {
+        border-radius: 16px; padding: 1.2rem 1.4rem; margin: 0.8rem 0;
+        font-size: 1.15rem; font-weight: 700; text-align: center;
+    }
+    .resultado .prob { display:block; font-size:0.95rem; font-weight:500; opacity:0.85; margin-top:0.3rem; }
+    .resultado.buena {
+        background: linear-gradient(135deg, rgba(143,184,92,0.25), rgba(227,181,91,0.20));
+        border: 1px solid #a9c97a; color:#e6f3d3;
+    }
+    .resultado.mala {
+        background: linear-gradient(135deg, rgba(196,69,105,0.30), rgba(90,20,40,0.35));
+        border: 1px solid #e8879c; color:#ffdfe6;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -128,10 +179,12 @@ if st.button('🔍 Predecir calidad'):
 
     #Resultado en color
     if Y_pred_etiqueta[0] == 'Buena':
-        st.success(f'🍇 El modelo predice que el vino es de calidad BUENA ({probabilidad:.0%} de probabilidad)')
+        st.markdown(f'<div class="resultado buena">🍇 El modelo predice que el vino es de calidad BUENA'
+                    f'<span class="prob">{probabilidad:.0%} de probabilidad</span></div>', unsafe_allow_html=True)
         st.balloons()
     else:
-        st.error(f'⚠️ El modelo predice que el vino es de calidad MALA ({probabilidad:.0%} de probabilidad)')
+        st.markdown(f'<div class="resultado mala">⚠️ El modelo predice que el vino es de calidad MALA'
+                    f'<span class="prob">{probabilidad:.0%} de probabilidad</span></div>', unsafe_allow_html=True)
 
     #Tabla con la predicción
     st.dataframe(data)
