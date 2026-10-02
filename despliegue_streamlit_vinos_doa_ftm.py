@@ -83,6 +83,19 @@ st.markdown("""
         box-shadow:0 10px 24px rgba(227,181,91,0.40);
     }
 
+    /* Cuadrícula de datos ingresados */
+    .datos-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.6rem; margin-bottom: 1rem;
+    }
+    .dato {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(227,181,91,0.22);
+        border-radius: 12px; padding: 0.6rem 0.8rem;
+    }
+    .dato .nombre { display:block; font-size:0.78rem; color:#e9cdd4; text-transform:uppercase; letter-spacing:0.4px; }
+    .dato .valor { display:block; font-size:1.25rem; font-weight:700; color:#f3d48a; margin-top:0.15rem; }
+
     /* Tarjetas de resultado */
     .resultado {
         border-radius: 16px; padding: 1.2rem 1.4rem; margin: 0.8rem 0;
@@ -137,8 +150,26 @@ datos = [[fixed_acidity, volatile_acidity, citric_acid, residual_sugar, chloride
           free_sulfur_dioxide, total_sulfur_dioxide, density, pH, sulphates, alcohol, tipo]]
 data = pd.DataFrame(datos, columns=predictoras_numericas + ['tipo']) #Dataframe con los mismos nombres de variables
 
+#Resumen de los datos ingresados en tarjetas (evita el scroll horizontal de la tabla)
+resumen = [
+    ('Tipo de vino', tipo.capitalize()),
+    ('Acidez fija', f'{fixed_acidity:.1f}'),
+    ('Acidez volátil', f'{volatile_acidity:.2f}'),
+    ('Ácido cítrico', f'{citric_acid:.2f}'),
+    ('Azúcar residual', f'{residual_sugar:.1f}'),
+    ('Cloruros', f'{chlorides:.3f}'),
+    ('pH', f'{pH:.2f}'),
+    ('SO₂ libre', f'{free_sulfur_dioxide:.0f}'),
+    ('SO₂ total', f'{total_sulfur_dioxide:.0f}'),
+    ('Densidad', f'{density:.4f}'),
+    ('Sulfatos', f'{sulphates:.2f}'),
+    ('Alcohol', f'{alcohol:.1f} %'),
+]
+tarjetas = ''.join(f'<div class="dato"><span class="nombre">{nombre}</span><span class="valor">{valor}</span></div>'
+                   for nombre, valor in resumen)
+
 st.subheader('📋 Datos ingresados')
-st.dataframe(data)
+st.markdown(f'<div class="datos-grid">{tarjetas}</div>', unsafe_allow_html=True)
 
 # Recordar medida de desempeño del modelo (validación cruzada, 10 folds)
 
@@ -149,22 +180,16 @@ data_preparada=data.copy()
 
 #En despliegue drop_first= False
 data_preparada = pd.get_dummies(data_preparada, columns=['tipo'], drop_first=False, dtype=int)
-data_preparada.head()
 
 #Se adicionan las columnas faltantes (queda solo tipo_tinto, igual que en el entrenamiento)
 data_preparada=data_preparada.reindex(columns=variables,fill_value=0)
-data_preparada.head()
 
 #Se normaliza para predecir con Knn, Red, SVM, Reg
 #En los despliegues no se llama fit
 #Como el modelo final es una Red Neuronal SÍ se normaliza
 data_preparada[predictoras_numericas]= min_max_scaler.transform(data_preparada[predictoras_numericas])
-data_preparada.head()
 
-"""# Predicción"""
-
-
-#Mostrar la predicción en la interfaz al presionar el botón
+#Predicción: se muestra en la interfaz al presionar el botón
 if st.button('🔍 Predecir calidad'):
 
     #Hacemos la predicción con la Red Neuronal
@@ -172,7 +197,6 @@ if st.button('🔍 Predecir calidad'):
 
     #Se convierte 0/1 a la etiqueta original (Buena/Mala)
     Y_pred_etiqueta = labelencoder.inverse_transform(Y_pred)
-    data['Prediccion'] = Y_pred_etiqueta
 
     #Probabilidad de la clase predicha
     probabilidad = modelo.predict_proba(data_preparada)[0].max()
@@ -185,40 +209,3 @@ if st.button('🔍 Predecir calidad'):
     else:
         st.markdown(f'<div class="resultado mala">⚠️ El modelo predice que el vino es de calidad MALA'
                     f'<span class="prob">{probabilidad:.0%} de probabilidad</span></div>', unsafe_allow_html=True)
-
-    #Tabla con la predicción
-    st.dataframe(data)
-
-data
-
-# Recordar medida de error del modelo
-
-st.warning("El modelo tiene un error del 8% (mape: error porcentual)")
-
-#Se realiza la preparación de datos
-data_preparada=data.copy()
-
-#En despliegue drop_first= False
-data_preparada = pd.get_dummies(data_preparada, columns=['tipo'], drop_first=False, dtype=int)
-data_preparada.head()
-
-#Se adicionan las columnas faltantes
-data_preparada=data_preparada.reindex(columns=variables,fill_value=0)
-data_preparada.head()
-
-#Se normaliza para predecir con Knn, Red, SVM, Reg
-#En los despliegues no se llama fit
-#Como el modelo final es Random Forest (árboles) NO se normaliza -> se deja comentado
-#data_preparada[['age','avg_glucose_level']]= min_max_scaler.transform(data_preparada[['age','avg_glucose_level']])
-#data_preparada.head()
-
-"""# Predicción"""
-
-#Hacemos la predicción con el Random Forest
-Y_pred = modelo.predict(data_preparada)
-print(Y_pred)
-
-#Se convierte 0/1 a la etiqueta original (No/Yes)
-Y_pred_etiqueta = labelencoder.inverse_transform(Y_pred)
-data['Prediccion']=Y_pred_etiqueta
-data.head()
