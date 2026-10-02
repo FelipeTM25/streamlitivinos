@@ -82,6 +82,9 @@ st.markdown("""
         color:#1a0710; transform: translateY(-2px);
         box-shadow:0 10px 24px rgba(227,181,91,0.40);
     }
+    /* El texto del botón va dentro de un <p>: se fuerza oscuro para que contraste con el dorado */
+    div.stButton > button p { color:#2a0a16 !important; font-weight:800; font-size:1.05rem; }
+    div.stButton > button:hover p { color:#1a0710 !important; }
 
     /* Cuadrícula de datos ingresados */
     .datos-grid {
